@@ -128,63 +128,6 @@ func keyByValue(m map[string]string, val string) string {
 	return ""
 }
 
-func saveID(discord string, matrix string) error {
-	s := &IDStore{}
-
-	f, err := os.OpenFile("data/idstore", os.O_RDWR, 0)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	err = msgpack.UnmarshalRead(f, s)
-	if err != nil {
-		return err
-	}
-
-	s.Map[discord] = matrix
-	err = msgpack.MarshalWrite(f, s)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func loadDiscordID(discord string) (string, error) {
-	s := &IDStore{}
-
-	f, err := os.Open("data/idstore")
-	if err != nil {
-		return "", err
-	}
-	defer f.Close()
-
-	err = msgpack.UnmarshalRead(f, s)
-	if err != nil {
-		return "", err
-	}
-
-	return s.Map[discord], nil
-}
-
-func loadMatrixID(matrix string) (string, error) {
-	s := &IDStore{}
-
-	f, err := os.Open("data/idstore")
-	if err != nil {
-		return "", err
-	}
-	defer f.Close()
-
-	err = msgpack.UnmarshalRead(f, s)
-	if err != nil {
-		return "", err
-	}
-
-	return keyByValue(s.Map, matrix), nil
-}
-
 func renderDiscord(e *event.Event) string {
 	body := ""
 
@@ -226,7 +169,7 @@ func matrixMessage(ctx context.Context, e *event.Event) {
 	channel := keyByValue(state.S.Channels, e.RoomID.String())
 
 	body := renderDiscord(e)
-	msg, err := state.D.ChannelMessageSend(
+	_, err := state.D.ChannelMessageSend(
 		channel,
 		body,
 	)
@@ -234,8 +177,6 @@ func matrixMessage(ctx context.Context, e *event.Event) {
 		log.Err(err).Msg("")
 		return
 	}
-
-	saveID(msg.ID, e.ID.String())
 }
 
 func discordMessage(s *discordgo.Session, e *discordgo.MessageCreate) {
@@ -246,7 +187,7 @@ func discordMessage(s *discordgo.Session, e *discordgo.MessageCreate) {
 	room := state.S.Channels[e.ChannelID]
 
 	content := renderMatrix(e)
-	msg, err := state.M.SendMessageEvent(
+	_, err := state.M.SendMessageEvent(
 		context.TODO(),
 		id.RoomID(room),
 		event.EventMessage,
@@ -256,8 +197,6 @@ func discordMessage(s *discordgo.Session, e *discordgo.MessageCreate) {
 		log.Err(err).Msg("")
 		return
 	}
-
-	saveID(e.ID, msg.EventID.String())
 }
 
 func main() {
