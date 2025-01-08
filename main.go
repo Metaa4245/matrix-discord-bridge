@@ -293,7 +293,6 @@ func main() {
 	syncer.OnSync(matrix.DontProcessOldEvents)
 
 	syncer.OnEventType(event.EventMessage, matrixMessage)
-	syncer.OnEventType(event.EventRedaction, matrixRedaction)
 	syncer.OnEventType(event.StateMember, matrixInvite)
 
 	discord, err := discordgo.New(settings.Token)
@@ -306,7 +305,6 @@ func main() {
 		discordgo.IntentsAllWithoutPrivileged | discordgo.IntentMessageContent
 
 	discord.AddHandler(discordMessage)
-	discord.AddHandler(discordRedaction)
 
 	state = State{
 		M: matrix,
